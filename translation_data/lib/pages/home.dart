@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:sqflite/sqflite.dart';
+import 'package:translation_data/database/database_service.dart';
+import 'package:translation_data/model/translation_model.dart';
 import 'package:translation_data/post.dart';
-
-
+import 'package:translation_data/database/resource_translation_db.dart';
+import 'package:translation_data/database/database_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,24 +16,34 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-const data = [
-  {'resource_id': '11', 'updated_at' : '12', 'value': 'wrada'},
-  {'resource_id': '113', 'updated_at' : '123', 'value': 'wradawrada'},
 
-  ];
-  
  
 class _HomePageState extends State<HomePage> {
-  late Future<List<Resource>> futureResource;
+  late Future<List<ResourceModel>> futureResource;
 
 
   @override
     void initState() {
     super.initState();
-    futureResource = fetchResource();
-  }
+    // Initialize futureResource to null initially
+    futureResource = retrieveData(); // Call the function to fetch data
+    }
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          try {
+            
+            await fetchAndStore();
+            
+          } catch (e) {
+            
+          }
+        },
+        child: Icon(
+          Icons.refresh, 
+          color: Colors.green),
+      ),
       appBar: AppBar(
         title: const Text(
           'Recursos de tradução',
@@ -45,7 +58,7 @@ class _HomePageState extends State<HomePage> {
       body: Column(
         children: [
           Container(
-            margin: EdgeInsets.only(top: 40, left: 20, right: 20),
+            margin: EdgeInsets.only(top: 10, left: 20, right: 20),
             decoration: BoxDecoration(
               boxShadow: [
                 BoxShadow(
@@ -72,26 +85,58 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           ),
+          Container(
+            margin: EdgeInsets.only(top: 10, left: 20, right: 20),
+            child: Row(
+              children: [
+                ElevatedButton(
+                  onPressed: null,
+                  child: Text('Language ID')
+                ),
+                SizedBox(width: 10,),
+                ElevatedButton(
+                  onPressed: null,
+                  child: Text('Module ID')
+                ),
+                SizedBox(width: 10,),
+
+                ElevatedButton(
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all<Color>(Colors.green),
+                    foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
+                  ),
+                  
+                  onPressed:() {
+                    final translationDB = translation_data_DB();
+                    translationDB.clearTable();
+                  },
+                  child: Text('Search')
+                ),
+              ],
+            ),
+          ),
+
+
           Expanded(
             child: Container(
               margin: EdgeInsets.only(top: 20,left: 15,right: 15),
-              child:FutureBuilder<List<Resource>>(
+              child:FutureBuilder<List<ResourceModel>>(
                 future: futureResource,
-                builder: (context, AsyncSnapshot<List<Resource>> snapshot) {
+                builder: (context, AsyncSnapshot<List<ResourceModel>> snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return Center(child: CircularProgressIndicator());
                   } else if (snapshot.hasError) {
                     return Center(child: Text('Error: ${snapshot.error}'));
                   } else if (snapshot.hasData) {
                     // Access the Resource object from snapshot.data
-                    List<Resource> resources = snapshot.data!;
+                    List<ResourceModel> resources = snapshot.data!;
                     
                     // Assuming you want to display a ListView of a list of Resources,
                     // you can access the specific fields of the Resource object like this:
                     return ListView.builder(
                       itemCount: resources.length, // Assuming you're displaying a single resource
                       itemBuilder: (context, index) {
-                        Resource resource = resources[index];
+                        ResourceModel resource = resources[index];
                         return Container(
                         
                         margin: EdgeInsets.only(top: 20, left: 15, right: 15),
@@ -117,7 +162,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ],
-        ),
+      ),
     );
   }
 }
@@ -134,6 +179,62 @@ Future<List<Resource>> fetchResource() async {
   } else {
     // If the server did not return a 200 OK response,
     // then throw an exception.
-    throw Exception('Failed to load album');
+    throw Exception('Failed to load Resources');
   }
+
+}
+Future<List<ResourceModel>> fetchAndStore() async {
+  try {
+    final translationDB = translation_data_DB();
+
+    // Fetch resources from the API
+    List<Resource> resources = await fetchResource();
+
+    // Convert fetched resources to ResourceModel objects
+    List<ResourceModel> resourceModels = resources.map((resource) {
+      return ResourceModel(
+        createdAt: resource.createdAt,
+        updatedAt: resource.updatedAt,
+        resourceId: resource.resourceId,
+        moduleId: resource.moduleId,
+        value: resource.value,
+        languageId: resource.languageId,
+      );
+    }).toList();
+    await translationDB.clearTable();
+    // Store the ResourceModel objects in the database
+
+    for (ResourceModel resourceModel in resourceModels) {
+      await translationDB.createResource(resourceModel);
+    }
+
+    return resourceModels;
+  } catch (e) {
+    // Handle any errors that occur during the fetch and store process
+    print('Error fetching and storing resources: $e');
+    rethrow; // Optionally rethrow the error to handle it elsewhere
+  }
+}
+
+Future<List<ResourceModel>> retrieveData() async {
+  // Create an instance of your database service
+  final translationDB = translation_data_DB();
+
+  // Call the function to read all columns from the database
+  List<Map<String, dynamic>> queryResponse = await translationDB.readAll();
+
+  // Convert the database results into a list of ResourceModel objects
+  List<ResourceModel> resources = queryResponse.map((result) {
+    // Extract fields from the database result
+    return ResourceModel(
+      createdAt: result['createdAt'],
+      updatedAt: result['updatedAt'],
+      resourceId: result['resourceId'],
+      moduleId: result['moduleId'],
+      value: result['value'],
+      languageId: result['languageId'],
+    );
+  }).toList();
+
+  return resources; // Return the list of ResourceModel objects
 }
