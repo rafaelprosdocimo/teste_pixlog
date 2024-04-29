@@ -10,6 +10,8 @@ This project is a Flutter front-end application for managing translation resourc
 
 ## Dependancies:
 
+### Dependancies:
+
 - http
 - sqflite
 - path
@@ -17,7 +19,7 @@ This project is a Flutter front-end application for managing translation resourc
 - flutter_riverpod
 - riverpod_annotation
 
-# Dev Dependancies:
+### Dev Dependancies:
 
 - flutter_test
 - flutter_lints
