@@ -51,19 +51,16 @@ A feature de filtro e pesquisa não foi implementada.
 
 ## Files:
 
-Lib
-|- main
-|- post
-|
-|- pages
-|   |- home
-|
-|- database
-|   |-database_service
-|   |- resource_translation
-|
-|- model
-    |-translation_model
+lib
+├── main.dart
+├── post.dart
+├── pages
+│   └── home.dart
+├── database
+│   ├── database_service.dart
+│   └── resource_translation.dart
+└── model
+    └── translation_model.dart
 
 
 ## Referencias:
