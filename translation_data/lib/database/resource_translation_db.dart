@@ -23,7 +23,7 @@ class translation_data_DB {
   }
     Future<void> clearTable() async {
     final database = await DatabaseService().database;
-    await database.delete(tableName); // Clear the table
+    await database.delete(tableName); 
   }
 
   Future<int> createResource(ResourceModel resource) async {
@@ -34,7 +34,6 @@ class translation_data_DB {
   Future<List<Map<String, dynamic>>> readAll() async {
     final database = await DatabaseService().database;
 
-    // Perform the query to retrieve all columns
     final List<Map<String, dynamic>> results = await database.query(tableName);
 
     return results;

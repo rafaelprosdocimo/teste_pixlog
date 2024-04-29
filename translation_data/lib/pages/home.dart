@@ -25,8 +25,7 @@ class _HomePageState extends State<HomePage> {
   @override
     void initState() {
     super.initState();
-    // Initialize futureResource to null initially
-    futureResource = retrieveData(); // Call the function to fetch data
+    futureResource = retrieveData();
     }
   Widget build(BuildContext context) {
     return Scaffold(
@@ -128,13 +127,12 @@ class _HomePageState extends State<HomePage> {
                   } else if (snapshot.hasError) {
                     return Center(child: Text('Error: ${snapshot.error}'));
                   } else if (snapshot.hasData) {
-                    // Access the Resource object from snapshot.data
+
                     List<ResourceModel> resources = snapshot.data!;
                     
-                    // Assuming you want to display a ListView of a list of Resources,
-                    // you can access the specific fields of the Resource object like this:
+
                     return ListView.builder(
-                      itemCount: resources.length, // Assuming you're displaying a single resource
+                      itemCount: resources.length,
                       itemBuilder: (context, index) {
                         ResourceModel resource = resources[index];
                         return Container(
@@ -177,8 +175,7 @@ Future<List<Resource>> fetchResource() async {
     List<Resource> resources = jsonData.map((json) => Resource.fromJson(json)).toList();
     return resources;
   } else {
-    // If the server did not return a 200 OK response,
-    // then throw an exception.
+
     throw Exception('Failed to load Resources');
   }
 
@@ -187,10 +184,8 @@ Future<List<ResourceModel>> fetchAndStore() async {
   try {
     final translationDB = translation_data_DB();
 
-    // Fetch resources from the API
     List<Resource> resources = await fetchResource();
 
-    // Convert fetched resources to ResourceModel objects
     List<ResourceModel> resourceModels = resources.map((resource) {
       return ResourceModel(
         createdAt: resource.createdAt,
@@ -202,7 +197,6 @@ Future<List<ResourceModel>> fetchAndStore() async {
       );
     }).toList();
     await translationDB.clearTable();
-    // Store the ResourceModel objects in the database
 
     for (ResourceModel resourceModel in resourceModels) {
       await translationDB.createResource(resourceModel);
@@ -210,22 +204,17 @@ Future<List<ResourceModel>> fetchAndStore() async {
 
     return resourceModels;
   } catch (e) {
-    // Handle any errors that occur during the fetch and store process
     print('Error fetching and storing resources: $e');
-    rethrow; // Optionally rethrow the error to handle it elsewhere
+    rethrow; 
   }
 }
 
 Future<List<ResourceModel>> retrieveData() async {
-  // Create an instance of your database service
   final translationDB = translation_data_DB();
 
-  // Call the function to read all columns from the database
   List<Map<String, dynamic>> queryResponse = await translationDB.readAll();
 
-  // Convert the database results into a list of ResourceModel objects
   List<ResourceModel> resources = queryResponse.map((result) {
-    // Extract fields from the database result
     return ResourceModel(
       createdAt: result['createdAt'],
       updatedAt: result['updatedAt'],
@@ -236,5 +225,5 @@ Future<List<ResourceModel>> retrieveData() async {
     );
   }).toList();
 
-  return resources; // Return the list of ResourceModel objects
+  return resources; 
 }
